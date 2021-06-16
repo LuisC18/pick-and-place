@@ -21,93 +21,95 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from robot_support import *
 
 def callback(data):
-    #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
-    # global a 
-    
-    x = data.position.x
-    y = data.position.y
-    # a = data.position.x
-    # b = data.position.y
-    z = data.orientation.z
+  #rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+  # global a 
+  
+  x = data.position.x
+  y = data.position.y
+  # a = data.position.x
+  # b = data.position.y
+  z = data.orientation.z
     
     
 def listener():
-    with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
-        file_content = f.read()
-        fileList = file_content.splitlines()
-        xC = float(fileList[0])/100
-        yC = float(fileList[1])/100
-        z_angle = radians(float(fileList[2])-90)
+ # with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+  with open("/home/ros/ws_pick-and-place/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+    file_content = f.read()
+    fileList = file_content.splitlines()
+    xC = float(fileList[0])/100
+    yC = float(fileList[1])/100
+    z_angle = radians(float(fileList[2])-90)
 
-        t= [math.cos(z_angle),math.sin(z_angle),0,
-        math.sin(z_angle),-math.cos(z_angle),0,
-        0,0,-1]
+    t= [math.cos(z_angle),math.sin(z_angle),0,
+    math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
 
-        w = sqrt(t[0]+t[4]+t[8]+1)/2
-        x = sqrt(t[0]-t[4]-t[8]+1)/2
-        y = sqrt(-t[0]+t[4]-t[8]+1)/2
-        z = sqrt(-t[0]-t[4]+t[8]+1)/2
-        a = [w,x,y,z]
-        m = a.index(max(a))
-        if m == 0:
-            x = (t[7]-t[5])/(4*w)
-            y = (t[2]-t[6])/(4*w)
-            z = (t[3]-t[1])/(4*w)
-        if m == 1:
-            w = (t[7]-t[5])/(4*x)
-            y = (t[1]+t[3])/(4*x)
-            z = (t[6]+t[2])/(4*x)
-        if m == 2:
-            w = (t[2]-t[6])/(4*y)
-            x = (t[1]+t[3])/(4*y)
-            z = (t[5]+t[7])/(4*y)
-        if m == 3:
-            w = (t[3]-t[1])/(4*z)
-            x = (t[6]+t[2])/(4*z)
-            y = (t[5]+t[7])/(4*z)
-        b = [w,x,y,z]
-        print(b)
+  z_180 = ([math.cos(radians(180)),-math.sin(radians(180)),0],
+          [math.sin(radians(180)),math.cos(radians(180)),0],
+          [0,0,1])
+  y_neg90=([math.cos(radians(-90)),0,math.sin(radians(-90))],
+          [0,1,0],
+          [-math.sin(radians(-90)),0,math.cos(radians(-90))])
 
-        pose_goal = [0,0,0,0,0,0,0]
-        pose_goal[0] = yC-0.07
-        pose_goal[1] = -xC-0.37
-        pose_goal[2] = 0.2
+  camera_rotMatrix= numpy.dot(z_180,y_neg90)
+
+  z_twist = ([math.cos(z_angle),math.sin(z_angle),0],
+            [math.sin(z_angle),-math.cos(z_angle),0],                                                                                                                                                  
+            [0,0,-1])
+
+  rot_twist = numpy.dot(camera_rotMatrix, z_twist)
+  print(rot_twist)
+
+  t= [rot_twist[0,0],rot_twist[0,1],rot_twist[0,2],rot_twist[1,0],rot_twist[1,1],rot_twist[1,2],rot_twist[2,0], rot_twist[2,1], rot_twist[2,2]]
+  #matrix to quat
+  w = sqrt(t[0]+t[4]+t[8]+1)/2
+  x = sqrt(t[0]-t[4]-t[8]+1)/2
+  y = sqrt(-t[0]+t[4]-t[8]+1)/2
+  z = sqrt(-t[0]-t[4]+t[8]+1)/2
+  a = [w,x,y,z]
+  m = a.index(max(a))
+  if m == 0:
+      x = (t[7]-t[5])/(4*w)
+      y = (t[2]-t[6])/(4*w)
+      z = (t[3]-t[1])/(4*w)
+  if m == 1:
+      w = (t[7]-t[5])/(4*x)
+      y = (t[1]+t[3])/(4*x)
+      z = (t[6]+t[2])/(4*x)
+  if m == 2:
+      w = (t[2]-t[6])/(4*y)
+      x = (t[1]+t[3])/(4*y)
+      z = (t[5]+t[7])/(4*y)
+  if m == 3:
+      w = (t[3]-t[1])/(4*z)
+      x = (t[6]+t[2])/(4*z)
+      y = (t[5]+t[7])/(4*z)
+  b = [w,x,y,z]
+  print(b)
+
+  pose_goal = [0,0,0,0,0,0,0]
+  pose_goal[0] = yC-0.07
+  pose_goal[1] = -xC-0.37
+  pose_goal[2] = 0.2
 
 
-        # x_angle = radians(-180)
-        # y_angle = radians(0)
-        
-        # #z_angle = radians(24)
-        # print('Z angle <= radians(-1)',radians(-1))
-        # print('Z angle: ',str(z_angle))
+  # Test 1: Object oriented at 0: Success
+  # Test 2: Oriented at -45: success
+  # Test 3: Orientated at -90: Success
+  # Test 4: Orient at ~ +22 degrees Success
+  # Test 5: Orient at -80 degrees:  Success
+  # Using +90 degrees should work for most cases, now up to camera to properly recognize angle
 
-        
+  # pose_goal[3]= 0.990268
+  # pose_goal[4]=-0.139173
+  # pose_goal[5]=0
+  # pose_goal[6]=-0.0000012228
 
-        # if z_angle <= radians(-1):
-        #     print('Z angle <= radians(-1)',radians(-1))
-        #     z_angle = radians(float(fileList[2])+135)
-        #     print('Angle is negative.')
-        # else:
-        #     print('Z_angle > 0')
-        #     z_angle = radians(float(fileList[2])-135)
+  pose_goal[3]=b[1] #x
+  pose_goal[4]=b[2] #y
+  pose_goal[5]=b[3] #z
+  pose_goal[6]=b[0] #w
 
-        # Test 1: Object oriented at 0: Success
-        # Test 2: Oriented at -45: success
-        # Test 3: Orientated at -90: Success
-        # Test 4: Orient at ~ +22 degrees Success
-        # Test 5: Orient at -80 degrees:  Success
-        # Using +90 degrees should work for most cases, now up to camera to properly recognize angle
-        # pose_goal[3]= 0.990268
-        # pose_goal[4]=-0.139173
-        # pose_goal[5]=0
-        # pose_goal[6]=-0.0000012228
-
-        pose_goal[3]=b[1]
-        pose_goal[4]=b[2]
-        pose_goal[5]=b[3]
-        pose_goal[6]=b[0]
-
-        return pose_goal
+  return pose_goal
 
 def main():
   try:
