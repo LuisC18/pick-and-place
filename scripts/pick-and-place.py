@@ -43,20 +43,28 @@ def listener():
     t= [math.cos(z_angle),math.sin(z_angle),0,
     math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
 
-  z_180 = ([math.cos(radians(180)),-math.sin(radians(180)),0],
-          [math.sin(radians(180)),math.cos(radians(180)),0],
+  z_orient=180
+  z_180 = ([math.cos(radians(z_orient)),-math.sin(radians(z_orient)),0],
+          [math.sin(radians(z_orient)),math.cos(radians(z_orient)),0],
           [0,0,1])
-  y_neg90=([math.cos(radians(-90)),0,math.sin(radians(-90))],
+  y_orient=-90
+  y_neg90=([math.cos(radians(y_orient)),0,math.sin(radians(y_orient))],
           [0,1,0],
-          [-math.sin(radians(-90)),0,math.cos(radians(-90))])
+          [-math.sin(radians(y_orient)),0,math.cos(radians(y_orient))])
+  x_orient=90
+  x_neg90=([1,0,0],
+          [0,math.cos(radians(x_orient)), -math.sin(radians(x_orient))],
+          [0,math.sin(radians(x_orient)),math.cos(radians(x_orient))])
 
-  camera_rotMatrix= numpy.dot(z_180,y_neg90)
+  camera_rot= numpy.dot(z_180,y_neg90)
+  camera_rotMatrix=numpy.dot(camera_rot,x_neg90)
+
 
   z_twist = ([math.cos(z_angle),math.sin(z_angle),0],
             [math.sin(z_angle),-math.cos(z_angle),0],                                                                                                                                                  
             [0,0,-1])
 
-  rot_twist = numpy.dot(camera_rotMatrix, z_twist)
+  rot_twist = numpy.dot(z_180,z_twist)
   print(rot_twist)
 
   t= [rot_twist[0,0],rot_twist[0,1],rot_twist[0,2],rot_twist[1,0],rot_twist[1,1],rot_twist[1,2],rot_twist[2,0], rot_twist[2,1], rot_twist[2,2]]
@@ -122,7 +130,7 @@ def main():
     # print('z-orientation:',c)
     
     #set velocity of motion
-    rc = moveManipulator('bot_mh5l')
+    rc = moveManipulator('bot_mh5l_pgn64')
     rc.set_vel(0.1)
     rc.set_accel(0.1)
 
@@ -157,9 +165,9 @@ def main():
     # #release object
     # rc.send_io(0)
     # rc.detach_object()
-    raw_input('Return to ztart <enter>')
-    #return to all zeros
-    rc.goto_all_zeros()
+    # raw_input('Return to start <enter>')
+    # #return to all zeros
+    # rc.goto_all_zeros()
     
     #rc.remove_object()
 
