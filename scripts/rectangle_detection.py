@@ -35,8 +35,12 @@ yList = []
 angleList = []
 # Scaled width and height of the paper
 scale = 2.5
-hP = 216 * scale  # in mm
-wP = 279.4 * scale  # in mm
+hP = 218 * scale # mm
+#Cardboard sheet: 218 mm
+#Paper: 216 * scale  # in mm
+wP = 289 * scale # mm
+# Cardboard sheet:289 mm
+# Paper: 279.4 * scale  # in mm
 loop =True
 try:
     while loop:

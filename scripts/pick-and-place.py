@@ -32,39 +32,39 @@ def callback(data):
     
     
 def listener():
- # with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
-  with open("/home/ros/ws_pick-and-place/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+  with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+  # with open("/home/ros/ws_pick-and-place/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
     file_content = f.read()
     fileList = file_content.splitlines()
     xC = float(fileList[0])/100
     yC = float(fileList[1])/100
     z_angle = radians(float(fileList[2])-90)
 
-    t= [math.cos(z_angle),math.sin(z_angle),0,
-    math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
+    # t= [math.cos(z_angle),math.sin(z_angle),0,
+    # math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
 
-  z_orient=180
-  z_180 = ([math.cos(radians(z_orient)),-math.sin(radians(z_orient)),0],
+  z_orient=-180
+  z_rot = ([math.cos(radians(z_orient)),-math.sin(radians(z_orient)),0],
           [math.sin(radians(z_orient)),math.cos(radians(z_orient)),0],
           [0,0,1])
-  y_orient=-90
-  y_neg90=([math.cos(radians(y_orient)),0,math.sin(radians(y_orient))],
+  y_orient=-180
+  y_rot=([math.cos(radians(y_orient)),0,math.sin(radians(y_orient))],
           [0,1,0],
           [-math.sin(radians(y_orient)),0,math.cos(radians(y_orient))])
-  x_orient=90
-  x_neg90=([1,0,0],
+  x_orient=-90
+  x_rot=([1,0,0],
           [0,math.cos(radians(x_orient)), -math.sin(radians(x_orient))],
           [0,math.sin(radians(x_orient)),math.cos(radians(x_orient))])
 
-  camera_rot= numpy.dot(z_180,y_neg90)
-  camera_rotMatrix=numpy.dot(camera_rot,x_neg90)
+  camera_rot= numpy.dot(z_rot,y_rot)
+  camera_rotMatrix=numpy.dot(camera_rot,x_rot)
 
 
-  z_twist = ([math.cos(z_angle),math.sin(z_angle),0],
-            [math.sin(z_angle),-math.cos(z_angle),0],                                                                                                                                                  
-            [0,0,-1])
+  z_twist = ([math.cos(z_angle),-math.sin(z_angle),0],
+            [math.sin(z_angle),math.cos(z_angle),0],                                                                                                                                                  
+            [0,0,1])
 
-  rot_twist = numpy.dot(z_180,z_twist)
+  rot_twist = numpy.dot(y_rot,z_twist)
   print(rot_twist)
 
   t= [rot_twist[0,0],rot_twist[0,1],rot_twist[0,2],rot_twist[1,0],rot_twist[1,1],rot_twist[1,2],rot_twist[2,0], rot_twist[2,1], rot_twist[2,2]]
@@ -95,9 +95,9 @@ def listener():
   print(b)
 
   pose_goal = [0,0,0,0,0,0,0]
-  pose_goal[0] = yC-0.07
-  pose_goal[1] = -xC-0.37
-  pose_goal[2] = 0.2
+  pose_goal[0] = yC-0.033
+  pose_goal[1] = -xC-0.409
+  pose_goal[2] = 0.1
 
 
   # Test 1: Object oriented at 0: Success
@@ -134,37 +134,42 @@ def main():
     rc.set_vel(0.1)
     rc.set_accel(0.1)
 
-    #starting position and open gripper
+    # #starting position and open gripper
     # raw_input('Go to All Zeroes <enter>')
     # rc.goto_all_zeros()
     # rc.send_io(0)
 
-    #for simulation
-    #raw_input('Add cube <enter>')
-    #rc.add_object()
-
+    # #for simulation
+    # #raw_input('Add cube <enter>')
+    # #rc.add_object()
     raw_input('Begin Pick and Place <enter>')
-
-    # move to object position
-    # pose [pos: x, y, z, axes:x y z w]
-    #pose_lower = [xC-0.08,yC+0.37,0.015,0,1,0,0]
     rc.goto_Quant_Orient(pose_goal)
+    # move to object position
 
-    # #grasp object
+    raw_input('Lower and Grasp <enter>')
+    # # pose [pos: x, y, z, axes:x y z w]
+    pose_goal[2] =0.02
+    rc.goto_Quant_Orient(pose_goal)
+    
+    # # #grasp object
     # rc.send_io(1)
-    # rc.attach_object()
+    # #rc.attach_object()
 
-    # #raise object
-    # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
-    # rc.goto_Quant_Orient(pose_higher)
+    # # #raise object
+    # # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
+    # # rc.goto_Quant_Orient(pose_higher)
 
+    # pose_goal[2] = 0.1
+    # rc.goto_Quant_Orient(pose_goal)
     # #lower object
-    # pose_lower = [xC-0.08,-yC-0.37,0.015,0,1,0,0]
-    # rc.goto_Quant_Orient(pose_lower)
-
+    # pose_goal[2] = 0.02
+    # rc.goto_Quant_Orient(pose_goal)
+   
     # #release object
     # rc.send_io(0)
-    # rc.detach_object()
+    # pose_goal[2] =0.1
+    # rc.goto_Quant_Orient(pose_goal)
+    # # rc.detach_object()
     # raw_input('Return to start <enter>')
     # #return to all zeros
     # rc.goto_all_zeros()
