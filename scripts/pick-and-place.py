@@ -95,9 +95,10 @@ def listener():
   print(b)
 
   pose_goal = [0,0,0,0,0,0,0]
-  pose_goal[0] = yC-0.033
-  pose_goal[1] = -xC-0.409
+  pose_goal[0] = yC-0.040
+  pose_goal[1] = -xC-0.385
   pose_goal[2] = 0.1
+  #0.1
 
 
   # Test 1: Object oriented at 0: Success
@@ -134,10 +135,10 @@ def main():
     rc.set_vel(0.1)
     rc.set_accel(0.1)
 
-    # #starting position and open gripper
-    # raw_input('Go to All Zeroes <enter>')
-    # rc.goto_all_zeros()
-    # rc.send_io(0)
+    #starting position and open gripper
+    raw_input('Go to All Zeroes <enter>')
+    rc.goto_all_zeros()
+    rc.send_io(0)
 
     # #for simulation
     # #raw_input('Add cube <enter>')
@@ -148,33 +149,34 @@ def main():
 
     raw_input('Lower and Grasp <enter>')
     # # pose [pos: x, y, z, axes:x y z w]
-    pose_goal[2] =0.02
+    pose_goal[2] =0.015
+    #original0.02
     rc.goto_Quant_Orient(pose_goal)
     
     # # #grasp object
-    # rc.send_io(1)
-    # #rc.attach_object()
+    rc.send_io(1)
+    #rc.attach_object()
 
-    # # #raise object
-    # # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
-    # # rc.goto_Quant_Orient(pose_higher)
+    # #raise object
+    # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
+    # rc.goto_Quant_Orient(pose_higher)
 
-    # pose_goal[2] = 0.1
-    # rc.goto_Quant_Orient(pose_goal)
-    # #lower object
-    # pose_goal[2] = 0.02
-    # rc.goto_Quant_Orient(pose_goal)
-   
-    # #release object
-    # rc.send_io(0)
-    # pose_goal[2] =0.1
-    # rc.goto_Quant_Orient(pose_goal)
-    # # rc.detach_object()
-    # raw_input('Return to start <enter>')
-    # #return to all zeros
-    # rc.goto_all_zeros()
+    pose_goal[2] = 0.1
+    rc.goto_Quant_Orient(pose_goal)
+    #lower object
+    pose_goal[2] = 0.01
+    rc.goto_Quant_Orient(pose_goal)
+    rospy.sleep(.5)
+    #release object
+    rc.send_io(0)
+    pose_goal[2] =0.1
+    rc.goto_Quant_Orient(pose_goal)
+    # rc.detach_object()
+    raw_input('Return to start <enter>')
+    #return to all zeros
+    rc.goto_all_zeros()
     
-    #rc.remove_object()
+    rc.remove_object()
 
   except rospy.ROSInterruptException:
     exit()

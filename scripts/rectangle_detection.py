@@ -35,10 +35,10 @@ yList = []
 angleList = []
 # Scaled width and height of the paper
 scale = 2.5
-hP = 218 * scale # mm
+hP = 216 * scale # mm
 #Cardboard sheet: 218 mm
 #Paper: 216 * scale  # in mm
-wP = 289 * scale # mm
+wP = 279.4 * scale # mm
 # Cardboard sheet:289 mm
 # Paper: 279.4 * scale  # in mm
 loop =True
@@ -48,19 +48,23 @@ try:
             pass
         # Determines whether coords and angle for object are consistent
         def isSame(index, xList, yList, angleList):
-            j = 0
+            if index >= 20:
+                j = index - 19
+            else:
+                j = 0
             countX = 0
             countY = 0
             countA = 0
             while (j < (index-1)):
                 if (xList[j] >= (xList[j+1] - 1) and xList[j] <= (xList[j+1] + 1)):
                     countX = countX + 1
+                   # print(countX)
                 if (yList[j] >= (yList[j+1] - 1) and yList[j] <= (yList[j+1] + 1)):
                     countY = countY + 1
                 if (angleList[j] >= (angleList[j+1] - 3) and angleList[j] <= (angleList[j+1] + 3)):
                     countA = countA + 1
                 j = j + 1
-            if (countX == 20 & countY == 20 & countA == 20):
+            if (countX == 18 & countY == 18 & countA == 18):
                 same = True
                 return same
             else:
@@ -271,6 +275,7 @@ try:
                     # Locates center point, distance to edge of paper and finds angle
                     NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
                     NewHeight = round(findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
+                   # print('New Width: ',NewWidth)
                     cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
                                 (255,0,255),3,8,0, 0.05)
                     cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
@@ -280,7 +285,7 @@ try:
                     result_angle = int(np.rad2deg(angle)) # in deg
                     # multiplying by negative 1 to match gripper CW(-) & CCW(+)
                     xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
-                    yC = round((hP/(10*scale)) - (round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)+2),3)   # in cm
+                    yC = round((hP/(10*scale)) - (round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)+2),3) # in cm
                     # Makes List for coordinates and angle
                     xList.append(xC)
                     yList.append(yC)
@@ -307,7 +312,7 @@ try:
                         same = isSame(index, xList, yList, angleList)
                         if (same == True):
                             print('********* RESULTS ***************')
-                            print('Angle is ' + str(result_angle) + ' degrees [CCW Positive]')
+                            print('Angle is ' + str(result_angle) + ' degrees [CW Positive]')
                             print('Coordinate of center is (' + str(xC) + ' , ' + str(yC) + ') cm')
                             pub_angle = int(np.rad2deg(result_angle))
                             #talker()
