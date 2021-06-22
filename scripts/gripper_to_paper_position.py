@@ -32,17 +32,22 @@ def callback(data):
     
     
 def listener():
-  with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+  # with open("/home/martinez737/ws_pick_camera/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
   # with open("/home/ros/ws_pick-and-place/src/pick-and-place/scripts/Coordinate-angle.txt", "r") as f:
+    # file_content = f.read()
+    # fileList = file_content.splitlines()
+    # xC = float(fileList[0])/100
+    # yC = float(fileList[1])/100
+    # z_angle = radians(float(fileList[2])-90)
 
-# used same code to get gripper to paper
-# reuse code to properly orient gripper to pick up object
-
-    file_content = f.read()
-    fileList = file_content.splitlines()
-    xC = float(fileList[0])/100
-    yC = float(fileList[1])/100
-    z_angle = radians(float(fileList[2])-90)
+    #^^^ this is for taking in values from txt file
+    # to get to paper position, simply input the paper coordinates for xC & yC and z_angle = 0
+    
+    xC = 0 
+    yC = 0 
+    # (0,0) is top right corner of paper, 
+    # Need to get correct location of previous static mount
+    z_angle = 0 # paper is oriented at 0 degrees
 
     # t= [math.cos(z_angle),math.sin(z_angle),0,
     # math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
@@ -99,14 +104,12 @@ def listener():
   print(b)
 
   pose_goal = [0,0,0,0,0,0,0]
-  pose_goal[0] = yC-0.040
+  pose_goal[0] = yC-0.040 # x-distance: 
   pose_goal[1] = -xC-0.385 # y-distance: Why is this negative xC??????
-  # I thought robot base x-axis in RVIZ points in same direction as y-axis of paper so shouldn't it be xC-0.385
-
-
-  # may need to alter these numbers since we're starting from a different location
-  pose_goal[2] = 0.1
-  #0.1
+  # I thought robot base x-axis points in same direction as y-axis so shouldn't it be xC-0.385
+  pose_goal[2] = 0.37
+  # Originally: 0.1
+  # Height of Camera mount: 0.37
 
 
   # Test 1: Object oriented at 0: Success
@@ -144,49 +147,47 @@ def main():
     rc.set_accel(0.1)
 
     #starting position and open gripper
- #   raw_input('Go to All Zeroes <enter>')
- #   rc.goto_all_zeros()
- #   rc.send_io(0) # open gripper
+    raw_input('Go to All Zeroes <enter>')
+    rc.goto_all_zeros()
+    rc.send_io(0)
 
     # #for simulation
     # #raw_input('Add cube <enter>')
     # #rc.add_object()
-   
-
-    raw_input('Begin Pick and Place <enter>')
+    raw_input('Go to paper location <enter>')
     rc.goto_Quant_Orient(pose_goal)
     # move to object position
 
-    raw_input('Lower and Grasp <enter>')
-    # # pose [pos: x, y, z, axes:x y z w]
-    pose_goal[2] =0.015
-    #original0.02
-    rc.goto_Quant_Orient(pose_goal)
+    # raw_input('Lower and Grasp <enter>')
+    # # # pose [pos: x, y, z, axes:x y z w]
+    # pose_goal[2] =0.015 # lowers to object
+    # #original0.02
+    # rc.goto_Quant_Orient(pose_goal)
     
-    # # #grasp object
-    rc.send_io(1) # closer gripper
-    #rc.attach_object()
+    # # # #grasp object
+    # rc.send_io(1)
+    # #rc.attach_object()
 
-    # #raise object
-    # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
-    # rc.goto_Quant_Orient(pose_higher)
+    # # #raise object
+    # # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
+    # # rc.goto_Quant_Orient(pose_higher)
 
-    pose_goal[2] = 0.1
-    rc.goto_Quant_Orient(pose_goal)
-    #lower object
-    pose_goal[2] = 0.01
-    rc.goto_Quant_Orient(pose_goal)
-    rospy.sleep(.5)
-    #release object
-    rc.send_io(0)
-    pose_goal[2] =0.1
-    rc.goto_Quant_Orient(pose_goal)
-    # rc.detach_object()
-    raw_input('Return to start <enter>')
-    #return to all zeros
-    rc.goto_all_zeros()
+    # pose_goal[2] = 0.1 # holds object at certain height
+    # rc.goto_Quant_Orient(pose_goal)
+    # #lower object
+    # pose_goal[2] = 0.01 # lower object
+    # rc.goto_Quant_Orient(pose_goal)
+    # rospy.sleep(.5)
+    # #release object
+    # rc.send_io(0)
+    # pose_goal[2] =0.1 # returns previous height
+    # rc.goto_Quant_Orient(pose_goal)
+    # # rc.detach_object()
+    # raw_input('Return to start <enter>')
+    # #return to all zeros
+    # rc.goto_all_zeros()
     
-    rc.remove_object()
+    # rc.remove_object()
 
   except rospy.ROSInterruptException:
     exit()
