@@ -88,7 +88,8 @@ try:
 
         # Warps the Image
         def warpImg(img, points, wP, hP):
-            pad = 20
+            pad = 10
+            #original: 20
             points = reorder(points)
             pts1 = np.float32(points)
             pts2 = np.float32([[0, 0], [wP, 0], [0, hP], [wP, hP]])
@@ -255,6 +256,10 @@ try:
         # Show images
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
         imgCont = color_image.copy()
+
+        #imgDepth=depth_frame.copy()
+        cv2.imshow('Depth',depth_frame)
+        #print('Depth Array',depth_frame)
         # Gets Contour of Paper
         a, b, c = getContours(color_image, imgCont, minArea = 3000, filter=4)
         cv2.imshow('RealSense',imgCont)
@@ -275,7 +280,8 @@ try:
                     # Locates center point, distance to edge of paper and finds angle
                     NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
                     NewHeight = round(findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
-                   # print('New Width: ',NewWidth)
+                  #  print('New Width: ',cntr[0])
+                  #  print('New Height: ',cntr[2])
                     cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
                                 (255,0,255),3,8,0, 0.05)
                     cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
@@ -285,7 +291,7 @@ try:
                     result_angle = int(np.rad2deg(angle)) # in deg
                     # multiplying by negative 1 to match gripper CW(-) & CCW(+)
                     xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
-                    yC = round((hP/(10*scale)) - (round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)+2),3) # in cm
+                    yC = round((hP/(10*scale)) - (round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)),3) # in cm
                     # Makes List for coordinates and angle
                     xList.append(xC)
                     yList.append(yC)

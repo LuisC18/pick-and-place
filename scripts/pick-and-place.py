@@ -42,7 +42,8 @@ def listener():
     fileList = file_content.splitlines()
     xC = float(fileList[0])/100
     yC = float(fileList[1])/100
-    z_angle = radians(float(fileList[2])-90)
+    z_angle = radians(float(fileList[2]))
+    # z_angle = radians(float(fileList[2])-90)
 
     # t= [math.cos(z_angle),math.sin(z_angle),0,
     # math.sin(z_angle),-math.cos(z_angle),0,0,0,-1]
@@ -99,8 +100,10 @@ def listener():
   print(b)
 
   pose_goal = [0,0,0,0,0,0,0]
-  pose_goal[0] = yC-0.040
-  pose_goal[1] = -xC-0.385 # y-distance: Why is this negative xC??????
+  pose_goal[0] = xC-0.16
+  pose_goal[1] = -yC-0.355 
+  # pose_goal[0] = xC-0.040
+  # pose_goal[1] = -yC-0.385 # y-distance: Why is this negative xC??????
   # I thought robot base x-axis in RVIZ points in same direction as y-axis of paper so shouldn't it be xC-0.385
 
 
@@ -144,9 +147,9 @@ def main():
     rc.set_accel(0.1)
 
     #starting position and open gripper
- #   raw_input('Go to All Zeroes <enter>')
- #   rc.goto_all_zeros()
- #   rc.send_io(0) # open gripper
+    raw_input('Go to All Zeroes <enter>')
+    rc.goto_all_zeros()
+    rc.send_io(0) # open gripper
 
     # #for simulation
     # #raw_input('Add cube <enter>')
@@ -159,7 +162,7 @@ def main():
 
     raw_input('Lower and Grasp <enter>')
     # # pose [pos: x, y, z, axes:x y z w]
-    pose_goal[2] =0.015
+    pose_goal[2] =0.01
     #original0.02
     rc.goto_Quant_Orient(pose_goal)
     
@@ -170,7 +173,7 @@ def main():
     # #raise object
     # pose_higher = [xC-0.08,-yC-0.37,.815,0,1,0,0]
     # rc.goto_Quant_Orient(pose_higher)
-
+    raw_input('Grasp <enter>')
     pose_goal[2] = 0.1
     rc.goto_Quant_Orient(pose_goal)
     #lower object
