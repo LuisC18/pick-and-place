@@ -158,8 +158,8 @@ try:
 
         def write():
             print('Creating a new file')
-            path = "/home/martinez737/ws_pick_camera/src/pick-and-place/scripts"
-            name = 'Coordinate-angle.txt'  # Name of text file coerced with +.txt
+            path = "/home/khan764/ws_Robot/src/pick-and-place/scripts"
+            name = 'disPixels.txt'  # Name of text file coerced with +.txt
             return name, path
 
         # Finds largest rectangular object
@@ -174,7 +174,7 @@ try:
             kernel = np.ones((5, 5))
             imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
             imgThre = cv2.erode(imgDilate, kernel, iterations=2)
-            contours, hierarchy = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours, _ = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             areaList = []
             approxList = []
             bboxList = []
@@ -253,12 +253,19 @@ try:
         else:
             images = np.hstack((color_image, depth_colormap))
 
+
+
         # Show images
         cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+        #cv2.imshow('RealSense',images)
+
+
+
         imgCont = color_image.copy()
 
         #imgDepth=depth_frame.copy()
-        cv2.imshow('Depth',depth_frame)
+        #cv2.imshow('Depth',depth_frame)
+        #cv2.imshow('Depth color',depth_colormap)
         #print('Depth Array',depth_frame)
         # Gets Contour of Paper
         a, b, c = getContours(color_image, imgCont, minArea = 3000, filter=4)
@@ -287,7 +294,36 @@ try:
                     cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
                                 (255,0,255),3,8,0,0.05)
                     x,y,w,h = c2[0]
+
                     angle, cntr, mean = getOrientation(nPoints, imgCont2)
+                    y_range=range((cntr[1]-50),(cntr[1]+50),1)
+                    x_range=range((cntr[0]-50),(cntr[0]+50),1)
+                    # print('X' + str(len(x_range)) + 'Y' + str(len(y_range)))
+                    # y_pixels=[np.ones(len(y_range))]
+                    # x_pixels=[np.ones(len(x_range))]
+                    dis_pixels= np.zeros((len(x_range),len(y_range)))
+                    stray = []
+                    i = 0
+                    while(i < len(y_range)-1):
+                        j = 0
+                        while(j < len(x_range)-1):
+                            dis_pixels[j,i] = depth_frame.get_distance(x_range[j], y_range[i])
+                            var = str(dis_pixels[j,i])
+                            stray.append(var)
+                            j = j+1
+                        i = i+1
+                    name, path = write()
+                    file = open(join(path, name),'w')   # Trying to create a new file or open one
+                    i2 = 0
+                    # DO NOT RUN BELOW --> Run risk to craashing computer & creating 7.0 gB txt file
+                    # while (i2 < len(stray)-1):
+                    #     file.write(stray[i2] +'/n')
+
+                    #file.write()
+                    file.close()
+                    print('wrote to file')
+
+                            
                     result_angle = int(np.rad2deg(angle)) # in deg
                     # multiplying by negative 1 to match gripper CW(-) & CCW(+)
                     xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
@@ -325,11 +361,11 @@ try:
                             a = [str(xC),str(yC),str(result_angle)]
                             #np.savetxt('Coordinate-angle.txt', zip(a), fmt="%5.2f")
                             #file.write(str(xC)+ '/n'+str(yC)+ '/n'+str(pub_angle))
-                            name, path = write()
-                            file = open(join(path, name),'w')   # Trying to create a new file or open one
-                            file.write(a[0] +'\n' +a[1] + '\n' +a[2])
-                            file.close()
-                            print('wrote to file')
+                            # name, path = write()
+                            # file = open(join(path, name),'w')   # Trying to create a new file or open one
+                            # file.write(a[0] +'\n' +a[1] + '\n' +a[2])
+                            # file.close()
+                            # print('wrote to file')
                             #with open("/home/martinez737/ws_pick_camera/Coordinate-angle.txt", "r") as f:
                                 #file_content = f.read()
                                 #fileList = file_content.splitlines()
