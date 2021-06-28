@@ -34,7 +34,8 @@ xList = []
 yList = []
 angleList = []
 # Scaled width and height of the paper
-scale = 2.5
+scale = 1
+# original: 2.5 with paper
 hP = 216 * scale # mm
 #Cardboard sheet: 218 mm
 #Paper: 216 * scale  # in mm
@@ -166,15 +167,18 @@ try:
         # Finds largest rectangular object
         def getContours(img, imgContour, minArea, filter):
             cThr = [100, 100]
-            try:
-                imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
-            except:
-                imgBlur = cv2.GaussianBlur(img,(5,5),1)
+            # try:
+            imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 0)
+            # except:
+            #     imgBlur = cv2.GaussianBlur(img,(5,5),1)
             imgCanny = cv2.Canny(imgBlur, cThr[0], cThr[1])
-            kernel = np.ones((5, 5))
+            kernel = np.ones((3, 3))
             imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
             imgThre = cv2.erode(imgDilate, kernel, iterations=2)
+            #thresh = cv2.adaptiveThreshold(imgBlur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 205, 1)
+            cv2.imshow("img threshold",imgThre)
+            #rospy.sleep(1)
             contours, _ = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             areaList = []
             approxList = []
@@ -193,6 +197,8 @@ try:
             if len(areaList) != 0:
                 areaList= sorted(areaList, reverse=True)
             return areaList, approxList, bboxList
+
+            # approxlist=perimeter
         # def camera_node():
         #     pub = rospy.Publisher('positionData',String,queue_size=10)
         #     rospy.init_node('positionData', anonymous=True)
@@ -269,113 +275,116 @@ try:
         #cv2.imshow('Depth color',depth_colormap)
         #print('Depth Array',depth_frame)
         # Gets Contour of Paper
-        a, b, c = getContours(color_image, imgCont, minArea = 3000, filter=4)
+        # a, b, c = getContours(color_image, imgCont, minArea = 3000, filter=4)
+        # ^^^^^ Looks for the paper
+
         cv2.imshow('RealSense',imgCont)
 
-        if len(a) != 0:
-            biggest = b[0]
-            # Warps Image
-            imgWarp = warpImg(imgCont, biggest, wP, hP)
-            imgCont2 = imgWarp.copy()
+        # if len(a) != 0:
+            # biggest = b[0]
+            # # Warps Image
+            # imgWarp = warpImg(imgCont, biggest, wP, hP)
+            # imgCont2 = imgWarp.copy()
             # Gets Contour of Block
-            a2, b2, c2 = getContours(imgWarp, imgCont2, minArea =20, filter = 4)
-            if len(b2) != 0:
-                # Finds biggest contour
-                biggest2 = b2[0]
-                cv2.polylines(imgCont2,b2,True,(0,255,0),2)
-                nPoints = reorder(biggest2)
-                if len(nPoints) != 0:
-                    # Locates center point, distance to edge of paper and finds angle
-                    NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
-                    NewHeight = round(findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
-                  #  print('New Width: ',cntr[0])
-                  #  print('New Height: ',cntr[2])
-                    cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
-                                (255,0,255),3,8,0, 0.05)
-                    cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
-                                (255,0,255),3,8,0,0.05)
-                    x,y,w,h = c2[0]
+        a2, b2, c2 = getContours(color_image, imgCont, minArea = 150, filter = 4)
+        if len(b2) != 0:
+            # Finds biggest contour
+            biggest2 = b2[0]
+            cv2.polylines(imgCont,b2,True,(0,255,0),2)
+            nPoints = (biggest2)
+            if len(nPoints) != 0:
+                # Locates center point, distance to edge of paper and finds angle
+                NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
+                NewHeight = round(findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
+              #  print('New Width: ',cntr[0])
+              #  print('New Height: ',cntr[2])
+                cv2.arrowedLine(imgCont, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
+                            (255,0,255),3,8,0, 0.05)
+                cv2.arrowedLine(imgCont, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
+                            (255,0,255),3,8,0,0.05)
+                x,y,w,h = c2[0]
 
-                    angle, cntr, mean = getOrientation(nPoints, imgCont2)
-                    y_range=range((cntr[1]-50),(cntr[1]+50),1)
-                    x_range=range((cntr[0]-50),(cntr[0]+50),1)
-                    # print('X' + str(len(x_range)) + 'Y' + str(len(y_range)))
-                    # y_pixels=[np.ones(len(y_range))]
-                    # x_pixels=[np.ones(len(x_range))]
-                    dis_pixels= np.zeros((len(x_range),len(y_range)))
-                    stray = []
-                    i = 0
-                    while(i < len(y_range)-1):
-                        j = 0
-                        while(j < len(x_range)-1):
-                            dis_pixels[j,i] = depth_frame.get_distance(x_range[j], y_range[i])
-                            var = str(dis_pixels[j,i])
-                            stray.append(var)
-                            j = j+1
-                        i = i+1
-                    name, path = write()
-                    file = open(join(path, name),'w')   # Trying to create a new file or open one
-                    i2 = 0
-                    # DO NOT RUN BELOW --> Run risk to craashing computer & creating 7.0 gB txt file
-                    # while (i2 < len(stray)-1):
-                    #     file.write(stray[i2] +'/n')
+                angle, cntr, mean = getOrientation(nPoints, imgCont)
+                y_range=range((cntr[1]-50),(cntr[1]+50),1)
+                x_range=range((cntr[0]-50),(cntr[0]+50),1)
+                # print('X' + str(len(x_range)) + 'Y' + str(len(y_range)))
+                # y_pixels=[np.ones(len(y_range))]
+                # x_pixels=[np.ones(len(x_range))]
+                # dis_pixels= np.zeros((len(x_range),len(y_range)))
+                # stray = []
+                # i = 0
+                # while(i < len(y_range)-1):
+                #     j = 0
+                #     while(j < len(x_range)-1):
+                #         dis_pixels[j,i] = depth_frame.get_distance(x_range[j], y_range[i])
+                #         var = str(dis_pixels[j,i])
+                #         stray.append(var)
+                #         j = j+1
+                #     i = i+1
+                # name, path = write()
+                # file = open(join(path, name),'w')   # Trying to create a new file or open one
+                # i2 = 0
+                # # DO NOT RUN BELOW --> Run risk to craashing computer & creating 7.0 gB txt file
+                # # while (i2 < len(stray)-1):
+                # #     file.write(stray[i2] +'/n')
 
-                    #file.write()
-                    file.close()
-                    print('wrote to file')
+                # #file.write()
+                # file.close()
+                # print('wrote to file')
 
-                            
-                    result_angle = int(np.rad2deg(angle)) # in deg
-                    # multiplying by negative 1 to match gripper CW(-) & CCW(+)
-                    xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
-                    yC = round((hP/(10*scale)) - (round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)),3) # in cm
-                    # Makes List for coordinates and angle
-                    xList.append(xC)
-                    yList.append(yC)
-                    angleList.append(result_angle)
-                    index = index + 1
+                        
+                result_angle = int(np.rad2deg(angle)) # in deg
+                # multiplying by negative 1 to match gripper CW(-) & CCW(+)
+                xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
+                yC = round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3) # in cm
+                #round((hP/(10*scale)) - 
+                # Makes List for coordinates and angle
+                xList.append(xC)
+                yList.append(yC)
+                angleList.append(result_angle)
+                index = index + 1
 
-                    # Draws arrows and puts text on image
-                    cv2.arrowedLine(imgCont2, (cntr[0], cntr[1]), (cntr[0],1000), (0, 255, 0), 2, 8, 0, 0.05)
-                    cv2.arrowedLine(imgCont2, (cntr[0],cntr[1]), (0, cntr[1]), (0, 255,0),2,8,0,0.05)
-                    center = [NewWidth / 2, NewHeight / 2]
-                    cv2.putText(imgCont2, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-                    cv2.putText(imgCont2, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-                    label = "  Rotation Angle: " + str(int(np.rad2deg(angle)) + 90) + " degrees"
-                    #
-                    textbox = cv2.rectangle(imgCont2, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
-                                            (255, 255, 255), 1)
-                    cv2.putText(imgCont2, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
-                                cv2.LINE_AA)
-                    cv2.imshow('Warp',imgCont2)
+                # Draws arrows and puts text on image
+                cv2.arrowedLine(imgCont, (cntr[0], cntr[1]), (cntr[0],1000), (0, 255, 0), 2, 8, 0, 0.05)
+                cv2.arrowedLine(imgCont, (cntr[0],cntr[1]), (0, cntr[1]), (0, 255,0),2,8,0,0.05)
+                center = [NewWidth / 2, NewHeight / 2]
+                cv2.putText(imgCont, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
+                cv2.putText(imgCont, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
+                label = "  Rotation Angle: " + str(int(np.rad2deg(angle)) + 90) + " degrees"
+                #
+                textbox = cv2.rectangle(imgCont, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
+                                        (255, 255, 255), 1)
+                cv2.putText(imgCont, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+                            cv2.LINE_AA)
+                cv2.imshow('Warp',imgCont)
 
-                    # Checks whether the same coords and angle are being detected consistently
-                    if (index >= 19):
-                        print('counting')
-                        same = isSame(index, xList, yList, angleList)
-                        if (same == True):
-                            print('********* RESULTS ***************')
-                            print('Angle is ' + str(result_angle) + ' degrees [CW Positive]')
-                            print('Coordinate of center is (' + str(xC) + ' , ' + str(yC) + ') cm')
-                            pub_angle = int(np.rad2deg(result_angle))
-                            #talker()
-                            a = [str(xC),str(yC),str(result_angle)]
-                            #np.savetxt('Coordinate-angle.txt', zip(a), fmt="%5.2f")
-                            #file.write(str(xC)+ '/n'+str(yC)+ '/n'+str(pub_angle))
-                            # name, path = write()
-                            # file = open(join(path, name),'w')   # Trying to create a new file or open one
-                            # file.write(a[0] +'\n' +a[1] + '\n' +a[2])
-                            # file.close()
-                            # print('wrote to file')
-                            #with open("/home/martinez737/ws_pick_camera/Coordinate-angle.txt", "r") as f:
-                                #file_content = f.read()
-                                #fileList = file_content.splitlines()
-                                #xCNew = float(fileList[0])
-                                #yCNew = float(fileList[1])
-                                #angleNew = float(fileList[2])
+                # Checks whether the same coords and angle are being detected consistently
+                if (index >= 19):
+                    print('counting')
+                    same = isSame(index, xList, yList, angleList)
+                    if (same == True):
+                        print('********* RESULTS ***************')
+                        print('Angle is ' + str(result_angle) + ' degrees [CW Positive]')
+                        print('Coordinate of center is (' + str(xC) + ' , ' + str(yC) + ') cm')
+                        pub_angle = int(np.rad2deg(result_angle))
+                        #talker()
+                        a = [str(xC),str(yC),str(result_angle)]
+                        #np.savetxt('Coordinate-angle.txt', zip(a), fmt="%5.2f")
+                        #file.write(str(xC)+ '/n'+str(yC)+ '/n'+str(pub_angle))
+                        # name, path = write()
+                        # file = open(join(path, name),'w')   # Trying to create a new file or open one
+                        # file.write(a[0] +'\n' +a[1] + '\n' +a[2])
+                        # file.close()
+                        # print('wrote to file')
+                        #with open("/home/martinez737/ws_pick_camera/Coordinate-angle.txt", "r") as f:
+                            #file_content = f.read()
+                            #fileList = file_content.splitlines()
+                            #xCNew = float(fileList[0])
+                            #yCNew = float(fileList[1])
+                            #angleNew = float(fileList[2])
 
 
-                            loop=False
+                        loop=False
                             
         #camera_node()
         cv2.waitKey(1)
