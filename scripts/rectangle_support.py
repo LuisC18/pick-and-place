@@ -7,13 +7,16 @@ import cv2
 import rospy
 from std_msgs.msg import *
 import geometry_msgs.msg 
+import cv2
+import imutils
 
 class detectRect(object):
   def __init__(self):
     super(detectRect,self).__init__()
     rospy.init_node('node_detectRectangle',anonymous=True)
     from geometry_msgs.msg import Pose
-    self.sendPosOrient= rospy.Publisher('Coordinates/Angle', Pose, queue_size=10)
+    #self.sendPosOrient= rospy.Publisher('Coordinates/Angle', Pose, queue_size=10)
+
     self.pipeline = rs.pipeline()
     self.config = rs.config()
 
@@ -30,24 +33,15 @@ class detectRect(object):
     else:
       self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-    
-
-    self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-
-    if self.device_product_line == 'L500':
-      self.config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
-    else:
-      self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-
     # Starts streaming
     self.pipeline.start(self.config)
 
-  def empty(self,a):
-    pass
-    # Determines whether coords and angle for object are consistent
 
   def isSame(self,index, xList, yList, angleList):
-    j = 0
+    if index>=20:
+      j=index-19
+    else:
+      j = 0
     countX = 0
     countY = 0
     countA = 0
@@ -59,7 +53,7 @@ class detectRect(object):
       if (angleList[j] >= (angleList[j+1] - 3) and angleList[j] <= (angleList[j+1] + 3)):
         countA = countA + 1
       j = j + 1
-    if (countX == 20 & countY == 20 & countA == 20):
+    if (countX == 18 & countY == 18 & countA == 18):
       same = True
       return same
     else:
@@ -81,20 +75,20 @@ class detectRect(object):
     except:
       return []
 
-  # Warps the Image
-  def warpImg(self,img, points, wP, hP):
-    pad = 20
-    points = self.reorder(points)
-    pts1 = np.float32(points)
-    pts2 = np.float32([[0, 0], [wP, 0], [0, hP], [wP, hP]])
-    matrix = cv2.getPerspectiveTransform(pts1, pts2)
-    wint = int(wP)
-    hint = int(hP)
-    imgWarp = cv2.warpPerspective(img, matrix, (wint, hint))
-    imgWarp = imgWarp[pad:imgWarp.shape[0] - pad, pad:imgWarp.shape[1] - pad]
-    return imgWarp
+  # # Warps the Image
+  # def warpImg(self,img, points, wP, hP):
+  #   pad = 20
+  #   points = self.reorder(points)
+  #   pts1 = np.float32(points)
+  #   pts2 = np.float32([[0, 0], [wP, 0], [0, hP], [wP, hP]])
+  #   matrix = cv2.getPerspectiveTransform(pts1, pts2)
+  #   wint = int(wP)
+  #   hint = int(hP)
+  #   imgWarp = cv2.warpPerspective(img, matrix, (wint, hint))
+  #   imgWarp = imgWarp[pad:imgWarp.shape[0] - pad, pad:imgWarp.shape[1] - pad]
+  #   return imgWarp
 
-  # Finds the distance between 2 points
+  # Finds the distance between 2 points (distance formula)
   def findDis(self,pts1, pts2):
     x1 = float(pts1[0])
     x2 = float(pts2[0])
@@ -151,35 +145,85 @@ class detectRect(object):
     return angle, cntr, mean
 
   # Finds largest rectangular object
-  def getContours(self,img, imgContour, minArea, filter):
-    cThr = [100, 100]
-    try:
-      imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-      imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
-    except:
-      imgBlur = cv2.GaussianBlur(img,(5,5),1)
-    imgCanny = cv2.Canny(imgBlur, cThr[0], cThr[1])
-    kernel = np.ones((5, 5))
-    imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
-    imgThre = cv2.erode(imgDilate, kernel, iterations=2)
-    contours, hierarchy = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    areaList = []
-    approxList = []
-    bboxList = []
-    for i in contours:
-      area = cv2.contourArea(i)
-      if area > minArea:
-        cv2.drawContours(imgContour, contours, 0, (255, 0, 0), 3)
-        peri = cv2.arcLength(i, True)
-        approx = cv2.approxPolyDP(i, 0.02 * peri, True)
-        bbox = cv2.boundingRect(approx)
-        if len(approx) == filter:
-          areaList.append(area)
-          approxList.append(approx)
-          bboxList.append(bbox)
-    if len(areaList) != 0:
-      areaList= sorted(areaList, reverse=True)
-    return areaList, approxList, bboxList
+  # def getContours(self,img, imgContour, minArea, filter):
+  #   cThr = [100, 100]
+  #   try:
+  #     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+  #     imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
+  #   except:
+  #     imgBlur = cv2.GaussianBlur(img,(5,5),1)
+  #   imgCanny = cv2.Canny(imgBlur, cThr[0], cThr[1])
+  #   kernel = np.ones((5, 5))
+  #   imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
+  #   imgThre = cv2.erode(imgDilate, kernel, iterations=2)
+  #   contours, hierarchy = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+  #   areaList = []
+  #   approxList = []
+  #   bboxList = []
+  #   for i in contours:
+  #     area = cv2.contourArea(i)
+  #     if area > minArea:
+  #       cv2.drawContours(imgContour, contours, 0, (255, 0, 0), 3)
+  #       peri = cv2.arcLength(i, True)
+  #       approx = cv2.approxPolyDP(i, 0.02 * peri, True)
+  #       bbox = cv2.boundingRect(approx)
+  #       if len(approx) == filter:
+  #         areaList.append(area)
+  #         approxList.append(approx)
+  #         bboxList.append(bbox)
+  #   if len(areaList) != 0:
+  #     areaList= sorted(areaList, reverse=True)
+  #   return areaList, approxList, bboxList
+  def shapeContours(frame):
+    ### pyimagesearch.com
+    #resize image
+    image = cv2.imread(frame)
+    resized = imutils.resize(image,width = 300)
+    ratio = image.shape[0]/float(resized.shape[0])
+
+    #grayscale, blur and threshold
+    imgGray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    imgBlur = cv2.GaussianBlur(image, (5, 5), 0)
+    thresh = cv2.threshold(imgBlur,60,255,cv2.THRESH_BINARY)[1]
+
+    #finds contours and calls shape detector
+    contours = cv2.findContours(thresh.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+    contours = imutils.grab_contours(contours)
+    sd = shapeDetect(contours)
+
+    for c in contours:
+      #find center
+      M = cv2.moments(c)
+      cX = int((M['m10']/M['m00'])*ratio)
+      cy = int((M['m01']/M['m00'])*ratio)
+
+  #finds shapes
+  def shapeDetect(contours):
+    ### pyimagesearch.com
+    shape = ''
+    perimeter = cv2.arcLength(contours,True)
+
+    #approxPolyDP smoothes and approximates the shape of the contour and outputs a set of vertices
+    approx = cv2.approxPolyDP(contours,.03 * perimeter, True)
+
+    
+    if len(approx)  == 3:
+      shape = 'triangle'
+
+    elif len(approx) == 4:
+      (x,y,width,height) = cv2.boundingRect(approx)
+      aspectRatio = width/float(height)
+
+      shape = 'square' if aspectRatio >= 0.95 and aspectRatio <= 1.05 else 'rectangle'
+
+    elif len(approx) ==5:
+      shape = 'pentagon'
+
+    else 
+      shape = 'circle'
+
+    return shape
+
   def talker():
     #pub = rospy.Publisher('Coordinates/Angle',Pose, queue_size=10)
     # is float64 right for Python 2.7? 
