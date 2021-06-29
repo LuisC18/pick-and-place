@@ -5,6 +5,7 @@ import numpy as np
 import math
 import cv2
 import rospy
+import argparse
 from std_msgs.msg import *
 from os.path import join
 
@@ -166,7 +167,9 @@ try:
 
         # Finds largest rectangular object
         def getContours(img, imgContour, minArea, filter):
-            cThr = [100, 100]
+            cThr = [60, 100]
+            # original: [100,100]
+
             # try:
             imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 0)
@@ -244,7 +247,18 @@ try:
 
         # Converts images to numpy arrays
         depth_image = np.asanyarray(depth_frame.get_data())
-        color_image = np.asanyarray(color_frame.get_data())
+        color_image_preCrop = np.asanyarray(color_frame.get_data())
+
+        #cropping the color_image to ignore table
+        color_image = color_image_preCrop[60:250, 200:500]
+        # 85:250, 85:220 => top left, small square of blue tarp
+        # 250:500, 250:500 => bottom right
+        # 100:500, 100:500 => too far to the left but good
+        # 100:500, 200:500 => move further up
+        # 60:400, 200:500 => move further up
+        # 40:90, 200:500
+        # 60:250, 200:500 => works!
+        cv2.imshow("Cropped color image",color_image)
 
         # Applys colormap on depth image (image must be converted to 8-bit per pixel first)
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
