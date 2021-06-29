@@ -13,7 +13,7 @@ import imutils
 class detectRect(object):
   def __init__(self):
     super(detectRect,self).__init__()
-    rospy.init_node('node_detectRectangle',anonymous=True)
+    #rospy.init_node('node_detectRectangle',anonymous=True)
     from geometry_msgs.msg import Pose
     #self.sendPosOrient= rospy.Publisher('Coordinates/Angle', Pose, queue_size=10)
 
@@ -174,7 +174,7 @@ class detectRect(object):
   #   if len(areaList) != 0:
   #     areaList= sorted(areaList, reverse=True)
   #   return areaList, approxList, bboxList
-  def shapeContours(frame):
+  def shapeContours(self,frame):
     ### pyimagesearch.com
     #resize image
     image = cv2.imread(frame)
@@ -197,8 +197,18 @@ class detectRect(object):
       cX = int((M['m10']/M['m00'])*ratio)
       cy = int((M['m01']/M['m00'])*ratio)
 
+
+      c = c.astype("float")
+      c *= ratio
+      c = c.astype("int")
+      cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
+      cv2.putText(image, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,0.5, (255, 255, 255), 2)
+    # show the output image
+      cv2.imshow("Image", image)
+      cv2.waitKey(0)
+
   #finds shapes
-  def shapeDetect(contours):
+  def shapeDetect(self,contours):
     ### pyimagesearch.com
     shape = ''
     perimeter = cv2.arcLength(contours,True)

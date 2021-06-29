@@ -7,138 +7,174 @@ import cv2
 import rospy
 from std_msgs.msg import *
 import geometry_msgs.msg 
-
 from rectangle_support import *
-rect = detectRect()
+from cv_bridge import CvBridge, CvBridgeError
 
 
-# Makes list for coords and angle
-index = 0
-xList = []
-yList = []
-angleList = []
-# Scaled width and height of the paper
-scale = 2.5
-hP = 216 * scale  # in mm
-wP = 279.4 * scale  # in mm
-loop =True
+def callback(data):
+    try:
+      cv_image = CvBridge().imgmsg_to_cv2(data, "bgr8")
+    except CvBridgeError as e:
+      print(e)
 
-    
-#def talker():
-  
+    cv2.imshow("Image window", cv_image)
+    cv2.waitKey(1)
+    return cv_image
 
 
 def main():
-  index=0
-  try:
-    while loop:
-      frames = rect.pipeline.wait_for_frames()
-      depth_frame = frames.get_depth_frame()
-      color_frame = frames.get_color_frame()
-      if not depth_frame or not color_frame:
-        continue
+  rect = detectRect()
+  # Makes list for coords and angle
+  index = 0
+  xList = []
+  yList = []
+  angleList = []
 
-      # Converts images to numpy arrays
-      depth_image = np.asanyarray(depth_frame.get_data())
-      color_image = np.asanyarray(color_frame.get_data())
+  loop =True
 
-      # Applys colormap on depth image (image must be converted to 8-bit per pixel first)
-      depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+ 
+  rospy.init_node('image_converter', anonymous=True)
+  image_sub = rospy.Subscriber("/camera/color/image_raw",Image,callback)
 
-      depth_colormap_dim = depth_colormap.shape
-      color_colormap_dim = color_image.shape
 
-      # If depth and color resolutions are different, resize color image to match depth image for display
-      if depth_colormap_dim != color_colormap_dim:
-        resized_color_image = cv2.resize(color_image, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]),
-                                         interpolation=cv2.INTER_AREA)
-        images = np.hstack((resized_color_image, depth_colormap))
-      else:
-        images = np.hstack((color_image, depth_colormap))
+  #depth_image = np.asanyarray(depth_frame.get_data())
+  color_img_preCrop = np.asanyarray(cv_image.get_data())
 
-      # Show images
-      cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-      imgCont = color_image.copy()
+  #cropping the color_img to ignore table
+  color_img = color_img_preCrop[60:250, 200:500]
 
-      # Gets Contour of Paper
-      a, b, c = rect.getContours(color_image, imgCont, minArea = 3000, filter=4)
-      cv2.imshow('RealSense',imgCont)
+  cv2.imshow("Cropped color image",color_img)
 
-      if len(a) != 0:
-        biggest = b[0]
+  # Applys colormap on depth image (image must be converted to 8-bit per pixel first)
+  #depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
 
-        # Warps Image
-        imgWarp = rect.warpImg(imgCont, biggest, wP, hP)
-        imgCont2 = imgWarp.copy()
+  # depth_colormap_dim = depth_colormap.shape
+  # color_colormap_dim = color_img.shape
 
-        # Gets Contour of Block
-        a2, b2, c2 = rect.getContours(imgWarp, imgCont2, minArea =20, filter = 4)
-        if len(b2) != 0:
-          # Finds biggest contour
-          biggest2 = b2[0]
-          cv2.polylines(imgCont2,b2,True,(0,255,0),2)
-          nPoints = rect.reorder(biggest2)
-          if len(nPoints) != 0:
-            # Locates center point, distance to edge of paper and finds angle
-            NewWidth = round(rect.findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
-            NewHeight = round(rect.findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
-            cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
-                        (255,0,255),3,8,0, 0.05)
-            cv2.arrowedLine(imgCont2, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
-                        (255,0,255),3,8,0,0.05)
-            x,y,w,h = c2[0]
+  # # If depth and color resolutions are different, resize color image to match depth image for display
+  # if depth_colormap_dim != color_colormap_dim:
+  #     resized_color_img = cv2.resize(color_img, dsize=(depth_colormap_dim[1], depth_colormap_dim[0]),
+  #                                      interpolation=cv2.INTER_AREA)
+  #     images = np.hstack((resized_color_img, depth_colormap))
+  # else:
+  #     images = np.hstack((color_img, depth_colormap))
 
-            angle, cntr, mean = rect.getOrientation(nPoints, imgCont2)
-            result_angle = int(np.rad2deg(angle)) # in deg
-            xC = round((wP/(10*scale)) - (round(rect.findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3)),3)  # in cm
-            yC = round((hP/(10*scale)) - (round(rect.findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3)+2),3)   # in cm
-            
-            # Makes List for coordinates and angle
-            xList.append(xC)
-            yList.append(yC)
-            angleList.append(result_angle)
-            index = index + 1
 
-            # Draws arrows and puts text on image
-            cv2.arrowedLine(imgCont2, (cntr[0], cntr[1]), (cntr[0],1000), (0, 255, 0), 2, 8, 0, 0.05)
-            cv2.arrowedLine(imgCont2, (cntr[0],cntr[1]), (1000, cntr[1]), (0, 255,0),2,8,0,0.05)
-            center = [NewWidth / 2, NewHeight / 2]
-            cv2.putText(imgCont2, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-            cv2.putText(imgCont2, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-            label = "  Rotation Angle: " + str(int(np.rad2deg(angle)) + 90) + " degrees"
-            textbox = cv2.rectangle(imgCont2, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
-                                    (255, 255, 255), 1)
-            cv2.putText(imgCont2, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
-                        cv2.LINE_AA)
-            cv2.imshow('Warp',imgCont2)
 
-            # # Checks whether the same coords and angle are being detected consistently
-            # if (index >= 19):
-            #   print('counting')
-            #   same = rect.isSame(index, xList, yList, angleList)
-            #   pub = rospy.Publisher('cameraPose',Pose, queue_size=10)
-            # rospy.init_node('cameraPose', anonymous=False)if (same == True):
-            #     print('********* RESULTS ***************')
-            #     print('Angle is ' + str(result_angle) + ' degrees [CCW Positive]')
-            #     print('Coordinate of center is (' + str(xC) + ' , ' + str(yC) + ') cm')
-            pub_angle = int(np.rad2deg(result_angle))
-            #     rect.talker()
-            #     #rospy.sleep(5)
-            from geometry_msgs.msg import Pose
-            # pub = rospy.Publisher('cameraPose',Pose, queue_size=10)
-            # rospy.init_node('cameraPose', anonymous=False)
-            rate = rospy.Rate(1) # 10hz
+  # Show images
+  cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
+  #cv2.imshow('RealSense',images)
 
-            pose_goal = geometry_msgs.msg.Pose()
-            pose_goal.position.x = xC
-            pose_goal.position.y = yC
-            pose_goal.orientation.z = pub_angle
+  image = color_img.copy()
 
-            # Publish node
-            while not rospy.is_shutdown():
-                #rospy.loginfo(message)
-                rect.sendPosOrient.publish(pose_goal)
-                rate.sleep()
+  #imgDepth=depth_frame.copy()
+  #cv2.imshow('Depth',depth_frame)
+  #cv2.imshow('Depth color',depth_colormap)
+  #print('Depth Array',depth_frame)
+
+  cv2.imshow('RealSense',image)
+
+  rect.
+
+  a2, b2, c2 = getContours(color_img, image, minArea = 150, filter = 4)
+  if len(b2) != 0:
+      # Finds biggest contour
+      biggest2 = b2[0]
+      cv2.polylines(image,b2,True,(0,255,0),2)
+      nPoints = (biggest2)
+      if len(nPoints) != 0:
+          # Locates center point, distance to edge of paper and finds angle
+          NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
+          NewHeight = round(findDis(nPoints[0][0]//scale, nPoints[2][0]//scale)/10,3)  #in cm
+        #  print('New Width: ',cntr[0])
+        #  print('New Height: ',cntr[2])
+          cv2.arrowedLine(image, (nPoints[0][0][0], nPoints[0][0][1]),(nPoints[1][0][0], nPoints[1][0][1]),
+                      (255,0,255),3,8,0, 0.05)
+          cv2.arrowedLine(image, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
+                      (255,0,255),3,8,0,0.05)
+          x,y,w,h = c2[0]
+
+          angle, cntr, mean = getOrientation(nPoints, image)
+          y_range=range((cntr[1]-50),(cntr[1]+50),1)
+          x_range=range((cntr[0]-50),(cntr[0]+50),1)
+          # print('X' + str(len(x_range)) + 'Y' + str(len(y_range)))
+          # y_pixels=[np.ones(len(y_range))]
+          # x_pixels=[np.ones(len(x_range))]
+          # dis_pixels= np.zeros((len(x_range),len(y_range)))
+          # stray = []
+          # i = 0
+          # while(i < len(y_range)-1):
+          #     j = 0
+          #     while(j < len(x_range)-1):
+          #         dis_pixels[j,i] = depth_frame.get_distance(x_range[j], y_range[i])
+          #         var = str(dis_pixels[j,i])
+          #         stray.append(var)
+          #         j = j+1
+          #     i = i+1
+          # name, path = write()
+          # file = open(join(path, name),'w')   # Trying to create a new file or open one
+          # i2 = 0
+          # # DO NOT RUN BELOW --> Run risk to craashing computer & creating 7.0 gB txt file
+          # # while (i2 < len(stray)-1):
+          # #     file.write(stray[i2] +'/n')
+
+          # #file.write()
+          # file.close()
+          # print('wrote to file')
+
+                  
+          result_angle = int(np.rad2deg(angle)) # in deg
+          # multiplying by negative 1 to match gripper CW(-) & CCW(+)
+          xC = round(findDis((cntr[0], cntr[1]), (0, cntr[1])) / (10*scale), 3) # in cm
+          yC = round(findDis((cntr[0], cntr[1]), (cntr[0], 0)) / (10*scale), 3) # in cm
+          #round((hP/(10*scale)) - 
+          # Makes List for coordinates and angle
+          xList.append(xC)
+          yList.append(yC)
+          angleList.append(result_angle)
+          index = index + 1
+
+          # Draws arrows and puts text on image
+          cv2.arrowedLine(image, (cntr[0], cntr[1]), (cntr[0],1000), (0, 255, 0), 2, 8, 0, 0.05)
+          cv2.arrowedLine(image, (cntr[0],cntr[1]), (0, cntr[1]), (0, 255,0),2,8,0,0.05)
+          center = [NewWidth / 2, NewHeight / 2]
+          cv2.putText(image, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
+          cv2.putText(image, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
+          label = "  Rotation Angle: " + str(int(np.rad2deg(angle)) + 90) + " degrees"
+          #
+          textbox = cv2.rectangle(image, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
+                                  (255, 255, 255), 1)
+          cv2.putText(image, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+                      cv2.LINE_AA)
+          cv2.imshow('Warp',image)
+
+          # Checks whether the same coords and angle are being detected consistently
+          if (index >= 19):
+              print('counting')
+              same = isSame(index, xList, yList, angleList)
+              if (same == True):
+                  print('********* RESULTS ***************')
+                  print('Angle is ' + str(result_angle) + ' degrees [CW Positive]')
+                  print('Coordinate of center is (' + str(xC) + ' , ' + str(yC) + ') cm')
+                  pub_angle = int(np.rad2deg(result_angle))
+                  #talker()
+                  a = [str(xC),str(yC),str(result_angle)]
+                  #np.savetxt('Coordinate-angle.txt', zip(a), fmt="%5.2f")
+                  #file.write(str(xC)+ '/n'+str(yC)+ '/n'+str(pub_angle))
+                  # name, path = write()
+                  # file = open(join(path, name),'w')   # Trying to create a new file or open one
+                  # file.write(a[0] +'\n' +a[1] + '\n' +a[2])
+                  # file.close()
+                  # print('wrote to file')
+                  #with open("/home/martinez737/ws_pick_camera/Coordinate-angle.txt", "r") as f:
+                      #file_content = f.read()
+                      #fileList = file_content.splitlines()
+                      #xCNew = float(fileList[0])
+                      #yCNew = float(fileList[1])
+                      #angleNew = float(fileList[2])
+
+
+                  loop=False
 
       cv2.waitKey(1)
 

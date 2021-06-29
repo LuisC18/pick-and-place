@@ -1,35 +1,42 @@
-import pyrealsense2 as rs
-import numpy as np
-import math
-import cv2
-import rospy
-from std_msgs.msg import *
-import sensor_msgs
-import geometry_msgs.msg 
-import cv2
-import imutils
+#!/usr/bin/env python
 
-#class detectRect(object):
 
-# def __init__(self):
-#   super(detectRect,self).__init__()
-  # rospy.init_node('node_detectRectangle',anonymous=True)
+# import pyrealsense2 as rs
+# import numpy as np
+# import math
+# import cv2
+# import rospy
+# from std_msgs.msg import *
+# import sensor_msgs.msg
+# import geometry_msgs.msg 
+# import cv2
+# import imutils
 
-def callback(self):
-  rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
+# #class detectRect(object):
 
-def listener(self):
-  rospy.init_node('node_detectRectangle',anonymous=True)
-  rospy.Subscriber("/camera/color/image_raw", sensor_msgs.msg.Image, callback)
-  rospy.spin()
+# # def __init__(self):
+# #   super(detectRect,self).__init__()
+#   # rospy.init_node('node_detectRectangle',anonymous=True)
 
-if __name__ == '__main__':
-try: 
-  listener()
-   
-except rospy.ROSInterruptException:
-  pass
+# def callback():
+#   rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
 
+# def listener():
+#   rospy.init_node('node_detectRectangle',anonymous=True)
+#   rospy.Subscriber("/camera/color/image_raw", Image, callback)
+#   rospy.spin()
+
+# if __name__ == '__main__':
+#   try: 
+#     listener()
+#   except rospy.ROSInterruptException:
+#     pass
+
+#!/usr/bin/env python
+#from __future__ import print_function
+
+#import roslib
+#roslib.load_manifest('my_package')
 
 
 ######################################### EDGE_DETECT.PY
