@@ -13,11 +13,11 @@ class image_converter:
     self.image_pub = rospy.Publisher("image_topic",Image,queue_size=20)
 
     self.bridge = CvBridge()
-    self.image_sub = rospy.Subscriber("/camera/color/image_raw",Image,self.callback)
+    self.image_sub = rospy.Subscriber("/camera/color/image_rect_raw",Image,self.callback)
 
   def callback(self,data):
     try:
-      cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+      cv_image = self.bridge.imgmsg_to_cv2(data, "mono16")
     except CvBridgeError as e:
       print(e)
 

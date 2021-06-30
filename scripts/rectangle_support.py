@@ -17,24 +17,24 @@ class detectRect(object):
     from geometry_msgs.msg import Pose
     #self.sendPosOrient= rospy.Publisher('Coordinates/Angle', Pose, queue_size=10)
 
-    self.pipeline = rs.pipeline()
-    self.config = rs.config()
+    # self.pipeline = rs.pipeline()
+    # self.config = rs.config()
 
-    # Get device product line for setting a supporting resolution
-    self.pipeline_wrapper = rs.pipeline_wrapper(self.pipeline)
-    self.pipeline_profile = self.config.resolve(self.pipeline_wrapper)
-    self.device = self.pipeline_profile.get_device()
-    self.device_product_line = str(self.device.get_info(rs.camera_info.product_line))
+    # # Get device product line for setting a supporting resolution
+    # self.pipeline_wrapper = rs.pipeline_wrapper(self.pipeline)
+    # self.pipeline_profile = self.config.resolve(self.pipeline_wrapper)
+    # self.device = self.pipeline_profile.get_device()
+    # self.device_product_line = str(self.device.get_info(rs.camera_info.product_line))
 
-    self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    # self.config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 
-    if self.device_product_line == 'L500':
-      self.config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
-    else:
-      self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    # if self.device_product_line == 'L500':
+    #   self.config.enable_stream(rs.stream.color, 960, 540, rs.format.bgr8, 30)
+    # else:
+    #   self.config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 
-    # Starts streaming
-    self.pipeline.start(self.config)
+    # # Starts streaming
+    # self.pipeline.start(self.config)
 
 
   def isSame(self,index, xList, yList, angleList):
@@ -202,7 +202,7 @@ class detectRect(object):
       c *= ratio
       c = c.astype("int")
       cv2.drawContours(image, [c], -1, (0, 255, 0), 2)
-      cv2.putText(image, shape, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,0.5, (255, 255, 255), 2)
+      cv2.putText(image, sd, (cX, cY), cv2.FONT_HERSHEY_SIMPLEX,0.5, (255, 255, 255), 2)
     # show the output image
       cv2.imshow("Image", image)
       cv2.waitKey(0)
@@ -229,7 +229,7 @@ class detectRect(object):
     elif len(approx) ==5:
       shape = 'pentagon'
 
-    else 
+    else:
       shape = 'circle'
 
     return shape

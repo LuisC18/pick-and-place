@@ -186,20 +186,31 @@ try:
             areaList = []
             approxList = []
             bboxList = []
+            BiggestContour = []
+            BiggestBounding =[]
             for i in contours:
+                #print('Contours: ',contours)
                 area = cv2.contourArea(i)
                 if area > minArea:
-                    cv2.drawContours(imgContour, contours, 0, (255, 0, 0), 3)
+                    cv2.drawContours(imgContour, [i], -1, (255, 0, 0), 3)
                     peri = cv2.arcLength(i, True)
-                    approx = cv2.approxPolyDP(i, 0.02 * peri, True)
-                    bbox = cv2.boundingRect(approx)
+                    approx = cv2.approxPolyDP(i, 0.04 * peri, True)
                     if len(approx) == filter:
+                        bbox = cv2.boundingRect(approx)
                         areaList.append(area)
                         approxList.append(approx)
                         bboxList.append(bbox)
+                        
             if len(areaList) != 0:
-                areaList= sorted(areaList, reverse=True)
-            return areaList, approxList, bboxList
+                SortedAreaList= sorted(areaList, reverse=True)
+                #print("sorted area list: ",SortedAreaList)
+                BiggestIndex = areaList.index(SortedAreaList[0])
+                #print('BiggestIndex: ',BiggestIndex)
+                BiggestContour = approxList[BiggestIndex]
+                BiggestBounding = bboxList[BiggestIndex]
+
+
+            return BiggestContour, BiggestBounding
 
             # approxlist=perimeter
         # def camera_node():
@@ -300,12 +311,11 @@ try:
             # imgWarp = warpImg(imgCont, biggest, wP, hP)
             # imgCont2 = imgWarp.copy()
             # Gets Contour of Block
-        a2, b2, c2 = getContours(color_image, imgCont, minArea = 150, filter = 4)
-        if len(b2) != 0:
+        bigCont, boundingBox = getContours(color_image, imgCont, minArea = 150, filter = 4)
+        if len(bigCont) != 0:
             # Finds biggest contour
-            biggest2 = b2[0]
-            cv2.polylines(imgCont,b2,True,(0,255,0),2)
-            nPoints = (biggest2)
+            cv2.polylines(imgCont,bigCont,True,(0,255,0),2)
+            nPoints = (bigCont)
             if len(nPoints) != 0:
                 # Locates center point, distance to edge of paper and finds angle
                 NewWidth = round(findDis(nPoints[0][0]//scale, nPoints[1][0]//scale)/10,3)   #in cm
@@ -316,7 +326,7 @@ try:
                             (255,0,255),3,8,0, 0.05)
                 cv2.arrowedLine(imgCont, (nPoints[0][0][0], nPoints[0][0][1]), (nPoints[2][0][0], nPoints[2][0][1]),
                             (255,0,255),3,8,0,0.05)
-                x,y,w,h = c2[0]
+                x,y,w,h = boundingBox
 
                 angle, cntr, mean = getOrientation(nPoints, imgCont)
                 y_range=range((cntr[1]-50),(cntr[1]+50),1)
@@ -364,13 +374,13 @@ try:
                 center = [NewWidth / 2, NewHeight / 2]
                 cv2.putText(imgCont, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
                 cv2.putText(imgCont, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-                label = "  Rotation Angle: " + str(int(np.rad2deg(angle)) + 90) + " degrees"
+                label = "  Rotation Angle: " + str(int(np.rad2deg(angle))) + " degrees"
                 #
                 textbox = cv2.rectangle(imgCont, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
                                         (255, 255, 255), 1)
                 cv2.putText(imgCont, label, (cntr[0], cntr[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
                             cv2.LINE_AA)
-                cv2.imshow('Warp',imgCont)
+                cv2.imshow('DrawBS',imgCont)
 
                 # Checks whether the same coords and angle are being detected consistently
                 if (index >= 19):
