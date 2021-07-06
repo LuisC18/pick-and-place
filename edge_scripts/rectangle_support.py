@@ -144,36 +144,39 @@ class detectRect(object):
     angle = math.atan2(eigenvectors[0, 1], eigenvectors[0, 0])  # orientation in radians
     return angle, cntr, mean
 
-  # Finds largest rectangular object
-  # def getContours(self,img, imgContour, minArea, filter):
-  #   cThr = [100, 100]
-  #   try:
-  #     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-  #     imgBlur = cv2.GaussianBlur(imgGray, (5, 5), 1)
-  #   except:
-  #     imgBlur = cv2.GaussianBlur(img,(5,5),1)
-  #   imgCanny = cv2.Canny(imgBlur, cThr[0], cThr[1])
-  #   kernel = np.ones((5, 5))
-  #   imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
-  #   imgThre = cv2.erode(imgDilate, kernel, iterations=2)
-  #   contours, hierarchy = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-  #   areaList = []
-  #   approxList = []
-  #   bboxList = []
-  #   for i in contours:
-  #     area = cv2.contourArea(i)
-  #     if area > minArea:
-  #       cv2.drawContours(imgContour, contours, 0, (255, 0, 0), 3)
-  #       peri = cv2.arcLength(i, True)
-  #       approx = cv2.approxPolyDP(i, 0.02 * peri, True)
-  #       bbox = cv2.boundingRect(approx)
-  #       if len(approx) == filter:
-  #         areaList.append(area)
-  #         approxList.append(approx)
-  #         bboxList.append(bbox)
-  #   if len(areaList) != 0:
-  #     areaList= sorted(areaList, reverse=True)
-  #   return areaList, approxList, bboxList
+    #finds contours on image
+  def getContours(self,color_frame, gray_mask)
+
+    imgBlur = cv2.GaussianBlur(gray_mask, (9, 9), 0)
+    cv2.imshow('blur',imgBlur)
+    imgCanny = cv2.Canny(imgBlur, 150, 300)
+
+    kernel = np.ones((3, 3))
+    imgDilate = cv2.dilate(imgCanny, kernel, iterations=3)
+    imgThre = cv2.erode(imgDilate, kernel, iterations=2)
+
+    cv2.imshow("img threshold",imgThre)
+    _,contours, _ = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    areaList = []
+    approxList = []
+    bboxList = []
+    BiggestContour = []
+    BiggestBounding =[]
+    for i in contours:
+      #print('Contours: ',contours)
+      area = cv2.contourArea(i)
+      img_with_contours = cv2.drawContours(color, [i], -1, (0, 255, 0), 3)
+      peri = cv2.arcLength(i, True)
+      approx = cv2.approxPolyDP(i, 0.04 * peri, True)
+      if len(approx) == 4:
+        bbox = cv2.boundingRect(approx)
+        areaList.append(area)
+        approxList.append(approx)
+        bboxList.append(bbox)
+
+    print(bboxList)
+    return img_with_contours
+
   def shapeContours(self,frame):
     ### pyimagesearch.com
     #resize image

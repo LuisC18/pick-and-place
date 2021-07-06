@@ -144,7 +144,7 @@ try:
 
             # Performs PCA analysis
             mean = np.empty((0))
-            mean, eigenvectors, eigenvalues = cv2.PCACompute2(data_pts, mean)
+            mean, eigenvectors = cv2.PCACompute2(data_pts, mean)
 
             # Stores the center of the object
             cntr = (int(mean[0, 0]), int(mean[0, 1]))
@@ -374,7 +374,7 @@ try:
                 center = [NewWidth / 2, NewHeight / 2]
                 cv2.putText(imgCont, '{}cm'.format(NewWidth),(x+30, y-10), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
                 cv2.putText(imgCont, '{}cm'.format(NewHeight),(x-70, y+h//2), cv2.FONT_HERSHEY_PLAIN, 0.75, (0,0,0),1)
-                label = "  Rotation Angle: " + str(int(np.rad2deg(angle))) + " degrees"
+                label = "  Rotation Angle: " + str(int(np.rad2deg(angle))) + " degrees" 
                 #
                 textbox = cv2.rectangle(imgCont, (cntr[0], cntr[1] - 25), (cntr[0] + 250, cntr[1] + 10),
                                         (255, 255, 255), 1)

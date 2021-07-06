@@ -10,5 +10,5 @@ find_package(catkin REQUIRED COMPONENTS
 
 catkin_package()
 
-install(DIRECTORY config launch meshes urdf scripts
+install(DIRECTORY edge_scripts volume_scripts
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
