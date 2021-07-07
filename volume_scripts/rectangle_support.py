@@ -142,7 +142,7 @@ class detectRect(object):
     imgThre = cv2.erode(imgDilate, kernel, iterations=2)
 
     cv2.imshow("img threshold",imgThre)
-    _,contours, _ = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(imgThre, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     areaList = []
     approxList = []
     bboxList = []
