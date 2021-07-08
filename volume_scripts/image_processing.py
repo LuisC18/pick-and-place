@@ -39,35 +39,76 @@ def main():
 		# color_image = np.asanyarray(color_frame.get_data())
 		# cv2.imshow('test',color_image)
 		# print(color_image.shape)
-		precrop_image1 = cv2.imread("images/black1_Color.png")
-		image1 = precrop_image1[60:250, 200:500]
 
-		cv2.imshow('CroppedBlack Box', image1)
-		precrop_image2 = cv2.imread("images/background_Color.png")
-		image2 = precrop_image2[60:250, 200:500]
-		cv2.imshow('Background only', image2)
-		image3 = image1 - image2
-		cv2.imshow('Subtracted image', image3)
+		'''
+		Need Kernel for better subtraction
+		Method below yields black screen
+
+		# Subtract images > Crop > Apply color Filter > Contour Detect
+		precrop_image1 = cv2.imread("images/black10_Color.png",cv2.IMREAD_GRAYSCALE)
+		#cv2.imshow('Black box-no crop',precrop_image1)
+		precrop_image2 = cv2.imread("images/background_Color.png",cv2.IMREAD_GRAYSCALE)
+		cv2.imshow('Background-no crop',precrop_image2)
+		precrop_image3 = cv2.subtract(precrop_image1,precrop_image2)
+		#cv2.imshow('Subtracted image',precrop_image3)
+		image3 = precrop_image3[60:250, 200:500]
+		cv2.imshow('cropped & subtracted',image3)
+
+		''' 
+		'''
+		Subtracting images then cropping = cropping then subtracting images
+
+		# image1 = precrop_image1[60:250, 200:500]
+		# cv2.imshow('CroppedBlack Box', image1)
+		# image2 = precrop_image2[60:250, 200:500]
+		# cv2.imshow('Background only', image2)
+		# image3 = image1 - image2
+		# cv2.imshow('Subtracted image', image3)
+
+		'''
+		#image = cv2.imread("images/black10_Color.png",cv2.IMREAD_GRAYSCALE)
+		#template = cv2.imread("images/background_Color.png",cv2.IMREAD_GRAYSCALE)
+		image = cv2.imread("images/black1_Color.png")
+		template = cv2.imread("images/background_Color.png")
+		kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+		template = cv2.morphologyEx(template, cv2.MORPH_ERODE, kernel,iterations = 2)
+		#template is the background image
+		image[template == 0] = 255
+		block_precrop = cv2.subtract(template,image)
+		block_uninvert = block_precrop[60:250, 200:500]
+		cv2.imshow('Block + Background', image)
+		cv2.imshow('Background', template)
+		cv2.imshow('Should just be block',block_uninvert)
+		block = cv2.bitwise_not(block_uninvert)
+		cv2.imshow('Inverted Block image',block)
+		#cF = colorFilter(block)
+		# This displayed the block mostly
+		# Picture was large so it included keyboard, table, floor, etc
+		# Cropping should fix it
 
 		rospy.sleep(4.5)
 
 		rect = detectRect()
 
 		# cF = colorFilter('images/black8_Color.png')
-		cF = colorFilter(image3)
-
+		cF = colorFilter(block)
+		grayscale_filtered = cv2.cvtColor(block,cv2.COLOR_BGR2GRAY)
+		#grayscale_filtered = image3
+		cv2.imshow('Grayscale after cropped & subtracted',grayscale_filtered)
+		
 		grayscale_filtered = cF.filterBackground()
 		cv2.imshow('Grayscale after color filter',grayscale_filtered)
+		
+## Section below applies Contours
 		raw_input('contours <enter>')
-
 		imgContour,bigCont,boundingBox, pixel_x, pixel_y = rect.getContours(cF.original,grayscale_filtered)
+		#imgContour,bigCont,boundingBox, pixel_x, pixel_y = rect.getContours(cF.original,binary_image)
 		cv2.imshow('Contours',imgContour)
 
 		drawingFit = cF.original.copy()
-		# r ospy.sleep(5)
+		# rospy.sleep(5)
 		# Locates center point
 		nPoints= (bigCont)
-
 
 
 		#draw centerpoint
